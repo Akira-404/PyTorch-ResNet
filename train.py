@@ -70,10 +70,20 @@ def train():
     if isTrain:
         # 5分类，使用辅助分类器，初始化权重
         net=resnet34()
+
+        #迁移学习，加载预训练模型
+        model_weight_path="./resnet34-pre.pth"
+        assert os.path.exists(model_weight_path), "{} 路径不存在.".format(image_path)
+        net.load_state_dict(torch.load(model_weight_path,map_location=device))
+
+        #重新设置最后一层全链接层
+        in_channel=net.fc.in_features
+        net.fc=nn.Linear(in_channel,5)
         net.to(device)
 
         loss_function = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(net.parameters(), lr=0.0003)
+        params=[p for p in net.parameters() if p.requires_grad]
+        optimizer = optim.Adam(params, lr=0.0003)
 
         epochs = 30
         best_acc = 0.0
