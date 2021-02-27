@@ -89,8 +89,6 @@ def train():
         epochs = 3
         best_acc = 0.0
         save_path = "./model_data.pth"
-        if os.path.exists(save_path):
-            os.mkdir(save_path)
 
         train_steps = len(train_loader)
 
