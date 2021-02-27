@@ -32,7 +32,7 @@ class BasicBlock(nn.Module):
         if self.downsample is not None:
             identity = self.downsample(x)
 
-        out = self.conv1(2)
+        out = self.conv1(x)
         out = self.bn1(out)
         out = self.relu(out)
 
@@ -117,7 +117,7 @@ class ResNet(nn.Module):
         # 通用层：conv:7x7 64 s=2
         # 通用层：maxpool:3x3 s=2
         self.conv1 = nn.Conv2d(3, self.in_channel, kernel_size=7, stride=2, padding=3, bias=False)
-        self.bn1 = nn.BatchNorm2d(self.include_top)
+        self.bn1 = nn.BatchNorm2d(self.in_channel)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
 
@@ -139,7 +139,7 @@ class ResNet(nn.Module):
                 nn.BatchNorm2d(channel * block.expansion))
 
         layers = []
-        layers.append(block(self.in_channel, channel, downsample, stride=stride, groups=self.groups,
+        layers.append(block(self.in_channel, channel, downsample=downsample, stride=stride, groups=self.groups,
                             width_per_group=self.width_per_group))
         self.in_channel = channel * block.expansion
 

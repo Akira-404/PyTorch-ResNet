@@ -1,4 +1,9 @@
 
 .idea/
 venv/
+__pycache__/
 
+model_data.pth
+resnet34-pre.pth
+
+tulip.jpeg

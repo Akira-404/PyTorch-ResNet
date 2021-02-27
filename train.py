@@ -16,10 +16,11 @@ def train():
         "train": transforms.Compose([transforms.RandomResizedCrop(224),
                                      transforms.RandomHorizontalFlip(),
                                      transforms.ToTensor(),
-                                     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))]),
-        "val": transforms.Compose([transforms.Resize((224, 224)),
+                                     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])]),
+        "val": transforms.Compose([transforms.Resize(256),
+                                   transforms.CenterCrop(224),
                                    transforms.ToTensor(),
-                                   transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])}
+                                   transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])}
 
     # 训练集数据地址
     image_path = "/home/lee/pyCode/dl_data/flower_photos"
@@ -66,26 +67,26 @@ def train():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("using {} device.".format(device))
 
-    isTrain =True
+    isTrain = True
     if isTrain:
-        # 5分类，使用辅助分类器，初始化权重
-        net=resnet34()
+        net = resnet34()
 
-        #迁移学习，加载预训练模型
-        model_weight_path="./resnet34-pre.pth"
+        # 迁移学习，加载预训练模型
+        model_weight_path = "./resnet34-pre.pth"
         assert os.path.exists(model_weight_path), "{} 路径不存在.".format(image_path)
-        net.load_state_dict(torch.load(model_weight_path,map_location=device))
 
-        #重新设置最后一层全链接层
-        in_channel=net.fc.in_features
-        net.fc=nn.Linear(in_channel,5)
+        net.load_state_dict(torch.load(model_weight_path, map_location=device))
+
+        # 重新设置最后一层全链接层
+        in_channel = net.fc.in_features
+        net.fc = nn.Linear(in_channel, 5)
         net.to(device)
 
         loss_function = nn.CrossEntropyLoss()
-        params=[p for p in net.parameters() if p.requires_grad]
-        optimizer = optim.Adam(params, lr=0.0003)
+        params = [p for p in net.parameters() if p.requires_grad]
+        optimizer = optim.Adam(params, lr=0.0001)
 
-        epochs = 30
+        epochs = 3
         best_acc = 0.0
         save_path = "./model_data.pth"
         if os.path.exists(save_path):
@@ -102,12 +103,10 @@ def train():
                 images, labels = data
                 optimizer.zero_grad()
 
-                logits, aux_logits2, aux_logits1 = net(images.to(device))
+                logits = net(images.to(device))
 
-                loss0 = loss_function(logits, labels.to(device))
-                loss1 = loss_function(aux_logits1, labels.to(device))
-                loss2 = loss_function(aux_logits2, labels.to(device))
-                loss = loss0 + loss1 * 0.3 + loss2 * 0.3
+                loss = loss_function(logits, labels.to(device))
+
                 loss.backward()
 
                 optimizer.step()
@@ -136,12 +135,12 @@ def train():
             print('[epoch %d] train_loss: %.3f  val_accuracy: %.3f' %
                   (epoch + 1, running_loss / train_steps, val_accurate))
 
-            #只保存最好的一次结果
+            # 只保存最好的一次结果
             if val_accurate > best_acc:
                 best_acc = val_accurate
                 torch.save(net.state_dict(), save_path)
 
-            print('训练完成')
+        print('训练完成')
 
 
 if __name__ == "__main__":
