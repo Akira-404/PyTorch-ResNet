@@ -7,7 +7,6 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 
 from model import resnet34
-import torchvision.models.mobilenet
 
 def main():
     device = torch.device('cuda:0' if torch.cuda.is_available() else "cpu")

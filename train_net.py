@@ -9,6 +9,8 @@ import torch.optim as optim
 from tqdm import tqdm
 
 from model import resnet34
+from data_preparation import split_data
+from my_dataset import MyDataSet
 
 
 def train():
@@ -25,24 +27,13 @@ def train():
     # 训练集数据地址
     image_path = "/home/lee/pyCode/dl_data/flower_photos"
     assert os.path.exists(image_path), "{} 路径不存在.".format(image_path)
+    train_images_path, train_images_label, val_images_path, val_images_label = split_data(image_path)
 
-    train_dataset = datasets.ImageFolder(root=os.path.join(image_path, "train"),
-                                         transform=data_transform["train"])
+    train_dataset = MyDataSet(images_path=train_images_path, images_label=train_images_label,
+                              transform=data_transform['train'])
+    val_dataset = MyDataSet(images_path=val_images_path, images_label=val_images_label, transform=data_transform['val'])
+
     train_num = len(train_dataset)
-
-    print("classes:", train_dataset.classes)  # 根据分类文件夹的名字来确定的类别
-    print("class_to_idx:", train_dataset.class_to_idx)  # 按顺序为这些类别定义索引为0,1...
-
-    # 将类型和索引反序并保持到json文件
-    flower_list = train_dataset.class_to_idx
-    cla_dict = dict((val, key) for key, val in flower_list.items())
-    print("cla_dict:", cla_dict)
-
-    # 将python对象编码成Json字符串
-    json_str = json.dumps(cla_dict, indent=4)
-    # 写入文件
-    with open('class_indices.json', 'w') as json_file:
-        json_file.write(json_str)
 
     batch_size = 32
 
@@ -54,10 +45,8 @@ def train():
                               batch_size=batch_size, shuffle=True,
                               num_workers=nw)
 
-    validate_dataset = datasets.ImageFolder(root=os.path.join(image_path, "val"),
-                                            transform=data_transform["val"])
-    val_num = len(validate_dataset)
-    validate_loader = DataLoader(validate_dataset,
+    val_num = len(val_dataset)
+    validate_loader = DataLoader(val_dataset,
                                  batch_size=batch_size, shuffle=False,
                                  num_workers=nw)
 
